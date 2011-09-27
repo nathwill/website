@@ -2,10 +2,10 @@
 #      Main Configs       #
 # ----------------------- #
 
-url: http://yoursite.com
-title: My Octopress Blog
-subtitle: A blogging framework for hackers.
-author: Your Name
+url: http://nathanewilliams.com
+title: nathwill's bloog
+subtitle: healthy discontent is the prelude to progress
+author: Nathan Williams
 simple_search: http://google.com/search
 
 # RSS / Email (optional) subscription links (change if using something like Feedburner)
@@ -49,8 +49,8 @@ default_asides: [asides/recent_posts.html, asides/github.html, asides/twitter.ht
 # ----------------------- #
 
 # Github repositories
-github_user:
-github_repo_count: 0
+github_user: nathwill
+github_repo_count: 3
 github_show_profile_link: true
 github_skip_forks: true
 
@@ -75,7 +75,7 @@ delicious_user:
 delicious_count: 3
 
 # Disqus Comments
-disqus_short_name:
+disqus_short_name: nathwill
 disqus_show_comment_count: false
 
 # Google Analytics
