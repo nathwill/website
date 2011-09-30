@@ -1,0 +1,75 @@
+#!/bin/bash
+#####################################
+# MounterBeast Script
+# /etc/NetworkManager/dispatcher.d/02remotemount
+# Copyright 2011 Nathan E. Williams
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+# Usage:
+# This script must be customized for your configuration.
+# By default, the script will attempt to mount a CIFS share
+# when a specified MAC address is found at the network gateway,
+# or over sshfs if the MAC address of the gateway is not the specified MAC.
+# e.g. I mount over CIFS to the servers internal IP when at home, and
+# over sshfs when away from home.
+#
+# Gathering Info:
+# $ arp -n -a $(ip route show 0.0.0.0/0 | awk '{print $3}') | awk '{print $4}'
+#
+# Testing:
+# up) sudo /etc/NetworkManager/dispatcher.d/02remotemount wlan0 up
+# down) sudo /etc/NetworkManager/dispatcher.d/02remotemount wlan0 down
+#####################################
+#
+# Configuration:
+#
+targetmac='xx:xx:xx:xx:xx:xx'
+mount_user='$USER'
+mount_pass='pass'
+internal_server_name='192.168.1.102'
+external_server_name='my.dyndns.com'
+share_name="music"
+mount_point='/mnt/remote'
+ssh_port='22'
+#
+# Should not need to edit below
+#
+gateway=$(ip route show 0.0.0.0/0 | awk '{print $3}')
+mactest=$(arp -n -a $gateway | awk '{print $4}')
+
+if [[ "$mactest" == "$targetmac" ]]
+then
+	case "$2" in
+        	up)
+			sleep 5
+			mount -t cifs -o username=$mount_user,password=$mount_pass //$internal_server_name/$share_name $mount_point
+        	;;
+        	down)
+			umount -l $mount_point
+        	;;
+	esac
+else
+	case "$2" in
+		up)
+			sleep 5
+			sshfs -p $ssh_port $external_server_name:$share_name $mount_point
+		;;
+		down)
+			umount -l $mount_point
+		;;
+	esac
+fi
+
+exit $?

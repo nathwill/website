@@ -1,0 +1,36 @@
+    hint: sitemap is called by body-switch template, change the call to the custom nested-sitemap template
+     
+    nested-sitemap()
+     
+    DIV id "info-div"
+      DIV class "infoText"
+        WITH-OBJECT :index
+          DIV id "sitemap-main-contents"
+            WHEN @contents
+              CALL :nested-sitemap-section
+                @contents
+            WHEN @price
+              DIV id "sitemap-item"
+                WITH-LINK TO id
+                  TEXT @name
+                  LINEBREAK
+     
+    nested-sitemap-section(contents)
+     
+    FOR-EACH-OBJECT contents
+      DIV
+        WHEN @contents
+          DIV id "sitemap-contents"
+            FONT size "+1"
+                 face @text-font
+              TEXT @name
+              TEXT "<hr width=\"200px\">"
+              CALL :nested-sitemap-section
+                @contents
+        WHEN @price
+          DIV id "sitemap-item"
+            WITH-LINK TO id
+              TEXT @name
+              LINEBREAK
+
+

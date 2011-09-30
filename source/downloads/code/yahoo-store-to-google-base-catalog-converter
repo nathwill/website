@@ -1,0 +1,176 @@
+<?php
+//set your options here
+//
+//your store url (e.g. http://www.acmeproducts.net/)
+$Store_URL = "";
+//
+//your store id (e.g. yhst-xxxxxxxxxxxxxx)
+$Store_ID = "";
+//
+//your store title here (e.g. Acme Products)
+$Store_Title = "";
+//your store description here (e.g. We make the best stuff at the best price!)
+$Store_Description = "";
+//comma separated list of your pmt opts (e.g. AMEX, DISC, VISA, MSTR, PAYPAL)
+// not currently in use, scheduled for future release
+$Accepted_Pmt_Opts = "";
+//
+//don't touch below here unless you know what's up
+//
+	$url = 'http://' . $Store_ID . '.stores.yahoo.net/catalog.xml';
+	$temp_file_name = $Store_ID . ".xml";
+//get file publish date 
+if (file_exists($temp_file_name)) { 
+	$section = file_get_contents($temp_file_name, NULL, NULL, 120, 200);
+	preg_match("/[0-9]{10}/", $section, $local_time_stamp);
+}
+//get remote file publish date
+$modified = "";
+function read_header($ch, $header)
+{
+    global $modified;
+    $length = strlen($header);
+    if(strstr($header, "Last-Modified:"))
+    {
+        $modified = substr($header, 15);
+    }
+    return $length;
+}
+
+function last_mod($remote_file)
+{
+    global $modified;
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, $remote_file);
+    curl_setopt($ch, CURLOPT_HEADER, 1);
+    curl_setopt($ch, CURLOPT_NOBODY, 1);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+    curl_setopt($ch, CURLOPT_HEADERFUNCTION, 'read_header');
+
+    $headers = curl_exec ($ch);
+    curl_close ($ch);
+    return $modified;
+} 
+$remote_time_stamp = strtotime(last_mod($url));
+//compare timestamps and retrieve remote file if remote catalog is newer
+if ($local_time_stamp[0] != $remote_time_stamp) {
+	//remove old data
+        if (file_exists($temp_file_name)) { 
+	    unlink($temp_file_name);
+        }
+	//get new xml data
+		// create a new cURL resource
+	$fh = fopen ($temp_file_name, "w");
+	$ch = curl_init();
+	// set cURL and other appropriate options
+	curl_setopt($ch, CURLOPT_URL, $url);
+	curl_setopt($ch, CURLOPT_HEADER, 0);
+	curl_setopt($ch, CURLOPT_FILE, $fh); 
+	//curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+	// grab URL and pass it to the browser
+	curl_exec($ch);
+	// close cURL resource, and free up system resources
+	curl_close($ch);
+	fclose($fh);
+} 
+//load xml data
+$xml = new XMLReader;
+$xml->open($temp_file_name);
+print("<?xml version=\"1.0\"?>\n<rss version=\"2.0\" xmlns:g=\"http://base.google.com/ns/1.0\">\n<channel>\n<title>" . $Store_Title ."</title>\n<link>" . $Store_URL . "</link>\n<description>" . $Store_Description ."</description>\n");
+//read xml data
+$xml->read();
+//start counter
+$i=0;
+while ($xml->read()) {
+        if ($xml->nodeType == XMLReader::ELEMENT && $xml->name == "Item" && $xml->nodeType != XMLReader::END_ELEMENT) {
+						if ($i>75000) {
+							$xml->close();
+						}
+						else {
+                        print ("<item>\n");
+                        print ("<g:id>" . $xml->getAttribute("ID") . "</g:id>\n");
+						$i++;
+						}
+        } else if ($xml->name == "ItemField") {
+                $test_property = $xml->getAttribute("TableFieldID");
+                $item_value = $xml->getAttribute("Value");
+                switch ($test_property) {
+                    case "name": {
+                        $name_dirty = $item_value;
+                        $name_grubby = strip_tags($name_dirty);
+                        $name_clean = preg_replace("/[^\w\s-.,_:]/", "", $name_grubby);
+                        print("<title>" . $name_clean . "</title>\n");
+                        unset($name_dirty);
+                        unset($name_grubby);
+                        unset($name_clean);
+                        unset($item_value);
+                        break;
+                    }
+                    case "code": {
+                        print("<g:sku>" . $item_value . "</g:sku>\n");
+                        unset($item_value);
+                        break;
+                    }
+                    case "product-url": {
+                        print("<link>" . $item_value . "</link>\n");
+                        unset($item_value);
+                        break;
+                    }
+                    case "caption": {
+                        $caption_dirty = $item_value;
+                        $caption_grubby = strip_tags($caption_dirty);
+                        $caption_clean = preg_replace("/[^\w\s-.,_:]/", "", $caption_grubby);
+                        print("<description>" . $caption_clean . "</description>\n");
+                        unset($caption_dirty);
+                        unset($caption_grubby);
+                        unset($caption_clean);
+                        unset($item_value);
+                        break;
+                    }
+                    case "condition": {
+                        print("<g:condition>" . $item_value . "</g:condition>\n");
+                        unset($item_value);
+                        break;
+                    }
+                    case "image": {
+                        $dom = new DomDocument();
+                        $node = @$dom->loadHTML($item_value);
+                        $tags = $dom->getElementsByTagName('img');
+                        foreach ($tags as $tag) {
+                            print("<g:image_link>" . $tag->getAttribute('src') . "</g:image_link>\n"); }
+                        unset($item_value);
+                        break;
+                    }
+                    case "product-type": {
+                        print("<g:product_type>" . $item_value . "</g:product_type>\n");
+                        unset($item_value);
+                        break;
+                    }
+                    case "sale-price": {
+                        $sale_price = round($item_value, 2);
+                        unset($item_value);
+                        break;
+                    }
+                    case "price": {
+                        $normal_price = round($item_value, 2);
+                        unset($item_value);
+                        break;
+                    }
+                } unset($test_property);
+        } else if ($xml->name == "Item" && $xml->nodeType == XMLReader::END_ELEMENT) {
+                $best_price = $normal_price;
+                unset($normal_price);
+                if ($sale_price!="") {
+                    unset($best_price);
+                    $best_price = $sale_price;
+                    unset($sale_price);
+                }
+                if ($best_price != "0") print("<g:price>" . $best_price . "</g:price><g:currency>USD</g:currency>\n");
+                unset($best_price);
+                print ("</item>\n");
+        }
+}
+print("</channel>\n</rss>");
+//end
+exit();
+?>
