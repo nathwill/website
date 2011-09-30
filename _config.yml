@@ -43,6 +43,7 @@ default_asides: [asides/recent_posts.html, asides/github.html, asides/twitter.ht
 blog_index_asides: [custom/asides/about.html, asides/github.html]
 post_asides: [custom/asides/about.html, asides/github.html]
 page_asides: [custom/asides/social.html, asides/github.html]
+landing_asides: [custom/asides/about.html, asides/recent_posts.html]
 
 # ----------------------- #
 #   3rd Party Settings    #

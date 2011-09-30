@@ -3,7 +3,7 @@ layout: post
 title: "New Job: Escalation Engineering at Yahoo!"
 date: 2011-09-28 17:48
 comments: true
-categories: [Yahoo!,Linux,Job]
+categories: [yahoo,linux,job]
 ---
 Well, this is my first real post in several months, but I wanted to take a moment to bring things up to date.<!--more-->
 My new wife and I are greatly enjoying the calm after the storm, and are getting our lives back in order now that the pressures of the wedding are behind us. Now if only we could motivate ourselves to finish up those thank-you cards!
